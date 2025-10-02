@@ -1,0 +1,23 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api/v1
+
+spring:
+  application:
+    name: cloud-sharing
+  # Database Configuration
+  datasource:
+    url: ${DBMS_CONNECTION:jdbc:postgresql://localhost:5432/cloud-sharing-db}
+    driverClassName: ${DBMS_DRIVER:org.postgresql.Driver}
+    username: ${DBMS_USERNAME:admin}
+    password: ${DBMS_PASSWORD:password}
+  # JPA Configuration
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: true
