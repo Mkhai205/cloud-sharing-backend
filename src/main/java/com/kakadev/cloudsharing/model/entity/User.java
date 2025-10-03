@@ -24,7 +24,7 @@ public class User {
     UUID id;
 
     @Email(message = "Email should be valid")
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, updatable = false)
     String email;
 
     String password;

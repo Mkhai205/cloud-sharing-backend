@@ -12,7 +12,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CreateUserResponseDTO {
+public class UserResponseDTO {
     UUID id;
     String email;
     AuthProvider provider;

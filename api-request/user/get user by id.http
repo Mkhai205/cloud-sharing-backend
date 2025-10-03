@@ -1,0 +1,4 @@
+### GET request to fetch user details by ID
+GET http://localhost:8080/api/v1/users/40915860-dc24-438e-98c2-d1751e4c3ff0
+
+###
