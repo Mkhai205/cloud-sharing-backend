@@ -17,6 +17,8 @@ public enum ErrorCode {
     LAST_NAME_REQUIRED(1007, "Last name is required", HttpStatus.BAD_REQUEST),
     EMAIL_INVALID(1008, "Email is not valid", HttpStatus.BAD_REQUEST),
     URL_INVALID(1009, "URL is not valid", HttpStatus.BAD_REQUEST),
+    PASSWORD_INCORRECT(1010, "Current password is incorrect", HttpStatus.BAD_REQUEST),
+    PASSWORD_MISMATCH(1011, "New password and confirm password do not match", HttpStatus.BAD_REQUEST),
     INVALID_KEY(8888, "Invalid key provided", HttpStatus.BAD_REQUEST),
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     ;

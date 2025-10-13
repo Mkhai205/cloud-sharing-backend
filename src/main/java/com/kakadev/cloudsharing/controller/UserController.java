@@ -1,7 +1,8 @@
 package com.kakadev.cloudsharing.controller;
 
 import com.kakadev.cloudsharing.dto.request.CreateUserRequestDTO;
-import com.kakadev.cloudsharing.dto.request.UpdateUserRequestDTO;
+import com.kakadev.cloudsharing.dto.request.UpdateUserPasswordRequestDTO;
+import com.kakadev.cloudsharing.dto.request.UpdateUserProfileRequestDTO;
 import com.kakadev.cloudsharing.dto.response.ApiResponse;
 import com.kakadev.cloudsharing.dto.response.UserResponseDTO;
 import com.kakadev.cloudsharing.service.UserService;
@@ -25,7 +26,7 @@ public class UserController {
 
     UserService userService;
 
-    @PostMapping()
+    @PostMapping("/register")
     public ResponseEntity<ApiResponse<UserResponseDTO>> createUser(
             @RequestBody @Valid CreateUserRequestDTO createUserRequestDTO
     ) {
@@ -58,13 +59,23 @@ public class UserController {
                 .build();
     }
 
-    @PutMapping("{userId}")
-    public ApiResponse<UserResponseDTO> updateUser(
+    @PutMapping("/profile/{userId}")
+    public ApiResponse<UserResponseDTO> updateUserProfile(
             @PathVariable("userId") UUID userId,
-            @RequestBody @Valid UpdateUserRequestDTO updateUserRequestDTO
+            @RequestBody @Valid UpdateUserProfileRequestDTO updateUserRequestDTO
     )  {
         return ApiResponse.<UserResponseDTO>builder()
-                .result(userService.updateUser(userId, updateUserRequestDTO))
+                .result(userService.updateUserProfile(userId, updateUserRequestDTO))
+                .build();
+    }
+
+    @PutMapping("/password/{userId}")
+    public ApiResponse<UserResponseDTO> updateUserPassword(
+            @PathVariable("userId") UUID userId,
+            @RequestBody @Valid UpdateUserPasswordRequestDTO updateUserPasswordRequestDTO
+            )  {
+        return ApiResponse.<UserResponseDTO>builder()
+                .result(userService.updateUserPassword(userId, updateUserPasswordRequestDTO))
                 .build();
     }
 

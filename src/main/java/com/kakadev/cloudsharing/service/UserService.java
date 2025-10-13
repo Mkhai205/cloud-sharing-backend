@@ -1,7 +1,8 @@
 package com.kakadev.cloudsharing.service;
 
 import com.kakadev.cloudsharing.dto.request.CreateUserRequestDTO;
-import com.kakadev.cloudsharing.dto.request.UpdateUserRequestDTO;
+import com.kakadev.cloudsharing.dto.request.UpdateUserPasswordRequestDTO;
+import com.kakadev.cloudsharing.dto.request.UpdateUserProfileRequestDTO;
 import com.kakadev.cloudsharing.dto.response.UserResponseDTO;
 import jakarta.validation.Valid;
 
@@ -16,7 +17,9 @@ public interface UserService {
 
     UserResponseDTO getMyProfile();
 
-    UserResponseDTO updateUser(UUID userId, UpdateUserRequestDTO updateUserRequestDTO);
+    UserResponseDTO updateUserProfile(UUID userId, UpdateUserProfileRequestDTO updateUserRequestDTO);
+
+    UserResponseDTO updateUserPassword(UUID userId, @Valid UpdateUserPasswordRequestDTO updateUserPasswordRequestDTO);
 
     void deleteUser(UUID userId);
 }

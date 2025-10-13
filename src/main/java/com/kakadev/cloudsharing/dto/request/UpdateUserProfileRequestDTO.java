@@ -1,7 +1,6 @@
 package com.kakadev.cloudsharing.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,10 +13,7 @@ import org.hibernate.validator.constraints.URL;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE)
-public class UpdateUserRequestDTO {
-
-    @Size(min = 6, max = 30, message = "PASSWORD_INVALID")
-    String password;
+public class UpdateUserProfileRequestDTO {
 
     @NotBlank(message = "FIRST_NAME_REQUIRED")
     String firstName;

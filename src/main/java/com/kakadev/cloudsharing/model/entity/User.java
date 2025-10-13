@@ -6,8 +6,10 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.hibernate.validator.constraints.URL;
 
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -17,14 +19,16 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@Table(name = "users")
+@Table(name = "users", uniqueConstraints = {
+    @UniqueConstraint(name = "uk_users_email", columnNames = "email")
+})
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     UUID id;
 
-    @Email(message = "Email should be valid")
-    @Column(nullable = false, unique = true, updatable = false)
+    @Email(message = "EMAIL_INVALID")
+    @Column(nullable = false, updatable = false)
     String email;
 
     String password;
@@ -35,29 +39,50 @@ public class User {
 
     String providerId;
 
-    @NotBlank(message = "First name cannot be blank")
+    @NotBlank(message = "FIRST_NAME_REQUIRED")
     @Column(nullable = false)
     String firstName;
 
-    @NotBlank(message = "Last name cannot be blank")
+    @NotBlank(message = "LAST_NAME_REQUIRED")
     @Column(nullable = false)
     String lastName;
 
+    @URL(message = "URL_INVALID")
     String avatarUrl;
 
     Integer credits;
 
+    Boolean isAccountVerified;
+
+    String verifyOtp;
+
+    Instant verifyOtpExpiry;
+
+    String resetPasswordOtp;
+
+    Instant resetPasswordOtpExpiry;
+
+    @ManyToMany
+    Set<Role> roles;
+
     @Column(nullable = false, updatable = false)
-    Instant createdAt;
+    @Builder.Default
+    Instant createdAt = Instant.now();
 
     @Column(nullable = false)
-    Instant updatedAt;
+    @Builder.Default
+    Instant updatedAt = Instant.now();
 
     @PrePersist
     protected void onCreate() {
         Instant now = Instant.now();
-        createdAt = now;
-        updatedAt = now;
+        if (createdAt == null) {
+            createdAt = now;
+        }
+        if (updatedAt == null) {
+            updatedAt = now;
+        }
+        isAccountVerified = false;
     }
 
     @PreUpdate

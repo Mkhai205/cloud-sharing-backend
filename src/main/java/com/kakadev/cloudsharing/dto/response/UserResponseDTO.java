@@ -20,6 +20,7 @@ public class UserResponseDTO {
     String firstName;
     String lastName;
     String avatarUrl;
+    Boolean isAccountVerified;
     Integer credits;
     Instant createdAt;
     Instant updatedAt;
