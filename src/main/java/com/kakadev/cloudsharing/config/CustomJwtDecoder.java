@@ -3,6 +3,7 @@ package com.kakadev.cloudsharing.config;
 import com.kakadev.cloudsharing.dto.request.IntrospectRequestDTO;
 import com.kakadev.cloudsharing.service.AuthenticationService;
 
+import com.nimbusds.jose.JOSEException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.spec.SecretKeySpec;
 
+import java.text.ParseException;
 import java.util.Objects;
 
 @Component
@@ -27,6 +29,7 @@ public class CustomJwtDecoder implements JwtDecoder {
 
     @Override
     public Jwt decode(String token) throws JwtException {
+
         try {
             var response = authenticationService.introspect(IntrospectRequestDTO.builder()
                     .token(token)
@@ -35,8 +38,8 @@ public class CustomJwtDecoder implements JwtDecoder {
             if (!response.isValid()) {
                 throw new JwtException("Token is invalid or expired");
             }
-        } catch (Exception e) {
-            throw new JwtException("Token is invalid or expired: " + e.getMessage());
+        } catch (ParseException | JOSEException e) {
+            throw new JwtException(e.getMessage());
         }
 
         if(Objects.isNull(nimbusJwtDecoder)) {
