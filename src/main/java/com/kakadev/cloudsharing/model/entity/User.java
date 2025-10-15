@@ -82,7 +82,6 @@ public class User {
         if (updatedAt == null) {
             updatedAt = now;
         }
-        isAccountVerified = false;
     }
 
     @PreUpdate

@@ -12,6 +12,7 @@ import com.kakadev.cloudsharing.model.entity.User;
 import com.kakadev.cloudsharing.model.enums.AuthProvider;
 import com.kakadev.cloudsharing.repository.RoleRepository;
 import com.kakadev.cloudsharing.repository.UserRepository;
+import com.kakadev.cloudsharing.service.AuthenticationService;
 import com.kakadev.cloudsharing.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -19,20 +20,18 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
 public class UserServiceImpl implements UserService {
 
+    AuthenticationService authenticationService;
     UserRepository userRepository;
     RoleRepository roleRepository;
-    UserMapper userMapper;
     PasswordEncoder passwordEncoder;
+    UserMapper userMapper;
 
     @Override
     public UserResponseDTO createUser(
@@ -47,9 +46,14 @@ public class UserServiceImpl implements UserService {
         newUser.setRoles(roles);
         newUser.setProvider(AuthProvider.LOCAL);
         newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
+        newUser.setIsAccountVerified(false);
         newUser.setCredits(5);
 
         User savedUser = userRepository.save(newUser);
+
+        // Send verification email
+        authenticationService.sendVerificationAccount(savedUser.getEmail());
+
         return userMapper.toResponseDTO(savedUser);
     }
 

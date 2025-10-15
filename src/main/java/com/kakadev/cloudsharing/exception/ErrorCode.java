@@ -19,6 +19,13 @@ public enum ErrorCode {
     URL_INVALID(1009, "URL is not valid", HttpStatus.BAD_REQUEST),
     PASSWORD_INCORRECT(1010, "Current password is incorrect", HttpStatus.BAD_REQUEST),
     PASSWORD_MISMATCH(1011, "New password and confirm password do not match", HttpStatus.BAD_REQUEST),
+    SEND_EMAIL_FAILED(2001, "Failed to send email", HttpStatus.INTERNAL_SERVER_ERROR),
+    VERIFICATION_CODE_INVALID(3001, "Verification code is invalid", HttpStatus.BAD_REQUEST),
+    VERIFICATION_CODE_EXPIRED(3002, "Verification code has expired", HttpStatus.BAD_REQUEST),
+    ACCOUNT_NOT_VERIFIED(3003, "Account is not verified", HttpStatus.FORBIDDEN),
+    FILE_NOT_FOUND(4001, "File not found", HttpStatus.NOT_FOUND),
+    FILE_SIZE_EXCEEDED(4002, "File size exceeded the limit of {max} MB", HttpStatus.BAD_REQUEST),
+    USER_ALREADY_VERIFIED(5001, "User account is already verified", HttpStatus.BAD_REQUEST),
     INVALID_KEY(8888, "Invalid key provided", HttpStatus.BAD_REQUEST),
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     ;

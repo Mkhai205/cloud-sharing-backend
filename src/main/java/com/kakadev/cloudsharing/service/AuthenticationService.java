@@ -1,9 +1,6 @@
 package com.kakadev.cloudsharing.service;
 
-import com.kakadev.cloudsharing.dto.request.AuthenticationRequestDTO;
-import com.kakadev.cloudsharing.dto.request.IntrospectRequestDTO;
-import com.kakadev.cloudsharing.dto.request.LogoutRequestDTO;
-import com.kakadev.cloudsharing.dto.request.RefreshTokenRequestDTO;
+import com.kakadev.cloudsharing.dto.request.*;
 import com.kakadev.cloudsharing.dto.response.AuthenticationResponseDTO;
 import com.kakadev.cloudsharing.dto.response.IntrospectResponseDTO;
 import com.nimbusds.jose.JOSEException;
@@ -11,6 +8,8 @@ import com.nimbusds.jose.JOSEException;
 import java.text.ParseException;
 
 public interface AuthenticationService {
+    void sendVerificationAccount(String email);
+    AuthenticationResponseDTO verifyAccount(VerifyAccountRequestDTO request);
     AuthenticationResponseDTO authenticate(AuthenticationRequestDTO request);
     AuthenticationResponseDTO refreshToken(RefreshTokenRequestDTO request) throws ParseException, JOSEException;
     IntrospectResponseDTO introspect(IntrospectRequestDTO request) throws ParseException, JOSEException;

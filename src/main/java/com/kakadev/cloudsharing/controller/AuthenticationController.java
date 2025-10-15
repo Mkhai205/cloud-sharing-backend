@@ -1,9 +1,6 @@
 package com.kakadev.cloudsharing.controller;
 
-import com.kakadev.cloudsharing.dto.request.AuthenticationRequestDTO;
-import com.kakadev.cloudsharing.dto.request.IntrospectRequestDTO;
-import com.kakadev.cloudsharing.dto.request.LogoutRequestDTO;
-import com.kakadev.cloudsharing.dto.request.RefreshTokenRequestDTO;
+import com.kakadev.cloudsharing.dto.request.*;
 import com.kakadev.cloudsharing.dto.response.ApiResponse;
 import com.kakadev.cloudsharing.dto.response.AuthenticationResponseDTO;
 import com.kakadev.cloudsharing.dto.response.IntrospectResponseDTO;
@@ -25,6 +22,24 @@ import java.text.ParseException;
 public class AuthenticationController {
 
     AuthenticationService authenticationService;
+
+    @PostMapping("/verify-account")
+    ApiResponse<AuthenticationResponseDTO> verifyAccount(
+            @RequestBody VerifyAccountRequestDTO request
+    ) {
+        return ApiResponse.<AuthenticationResponseDTO>builder()
+                .result(authenticationService.verifyAccount(request))
+                .build();
+    }
+
+    @PostMapping("/resend-verification")
+    ApiResponse<Void> resendVerification(
+            @RequestBody ResendVerificationRequestDTO request
+    ) {
+        authenticationService.sendVerificationAccount(request.getEmail());
+        return ApiResponse.<Void>builder()
+                .build();
+    }
 
     @PostMapping("/login")
     ApiResponse<AuthenticationResponseDTO> authenticate(

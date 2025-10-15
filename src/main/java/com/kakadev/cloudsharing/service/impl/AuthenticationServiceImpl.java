@@ -1,9 +1,6 @@
 package com.kakadev.cloudsharing.service.impl;
 
-import com.kakadev.cloudsharing.dto.request.AuthenticationRequestDTO;
-import com.kakadev.cloudsharing.dto.request.IntrospectRequestDTO;
-import com.kakadev.cloudsharing.dto.request.LogoutRequestDTO;
-import com.kakadev.cloudsharing.dto.request.RefreshTokenRequestDTO;
+import com.kakadev.cloudsharing.dto.request.*;
 import com.kakadev.cloudsharing.dto.response.AuthenticationResponseDTO;
 import com.kakadev.cloudsharing.dto.response.IntrospectResponseDTO;
 import com.kakadev.cloudsharing.exception.AppException;
@@ -13,6 +10,7 @@ import com.kakadev.cloudsharing.model.entity.User;
 import com.kakadev.cloudsharing.repository.InvalidatedTokenRepository;
 import com.kakadev.cloudsharing.repository.UserRepository;
 import com.kakadev.cloudsharing.service.AuthenticationService;
+import com.kakadev.cloudsharing.service.EmailService;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.MACSigner;
 import com.nimbusds.jose.crypto.MACVerifier;
@@ -39,18 +37,22 @@ import java.util.UUID;
 @FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
 public class AuthenticationServiceImpl implements AuthenticationService {
 
+    EmailService emailService;
     PasswordEncoder passwordEncoder;
     UserRepository userRepository;
     InvalidatedTokenRepository invalidatedTokenRepository;
 
     @NonFinal
-    @Value("${jwt.signerKey}")
+    @Value("${app.mail.verification-otp-expiry-duration}")
+    protected Long OTP_EXPIRY_DURATION; // in seconds
+    @NonFinal
+    @Value("${app.jwt.signerKey}")
     protected String SECRET_KEY;
     @NonFinal
-    @Value("${jwt.valid-duration}")
+    @Value("${app.jwt.valid-duration}")
     protected Long VALID_DURATION;
     @NonFinal
-    @Value("${jwt.refreshable-duration}")
+    @Value("${app.jwt.refreshable-duration}")
     protected Long REFRESHABLE_DURATION;
 
     private String buildScope(User user) {
@@ -113,6 +115,58 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
 
         return signedJWT;
+    }
+
+    private String generateVerificationCode() {
+        // Generate a random 6-digit verification code
+        int code = (int)(Math.random() * 900000) + 100000;
+        return String.valueOf(code);
+    }
+
+    @Override
+    public void sendVerificationAccount(String email) {
+        User newUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        if (newUser.getIsAccountVerified()) {
+            throw new AppException(ErrorCode.USER_ALREADY_VERIFIED);
+        }
+
+        String verificationCode = generateVerificationCode();
+        newUser.setVerifyOtp(verificationCode);
+        newUser.setVerifyOtpExpiry(Instant.now().plus(OTP_EXPIRY_DURATION, ChronoUnit.SECONDS));
+
+        userRepository.save(newUser);
+
+        emailService.sendResetPassword(email, verificationCode);
+    }
+
+    @Override
+    public AuthenticationResponseDTO verifyAccount(
+            VerifyAccountRequestDTO request
+    ) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        if (user.getVerifyOtp() == null || !user.getVerifyOtp().equals(request.getVerificationCode())) {
+            throw new AppException(ErrorCode.VERIFICATION_CODE_INVALID);
+        }
+
+        if (user.getVerifyOtpExpiry() == null || user.getVerifyOtpExpiry().isBefore(Instant.now())) {
+            throw new AppException(ErrorCode.VERIFICATION_CODE_EXPIRED);
+        }
+
+        user.setVerifyOtp(null);
+        user.setVerifyOtpExpiry(null);
+        user.setIsAccountVerified(true);
+        userRepository.save(user);
+
+        String token = generateToken(user);
+
+        return AuthenticationResponseDTO.builder()
+                .token(token)
+                .authenticated(true)
+                .build();
     }
 
     @Override
