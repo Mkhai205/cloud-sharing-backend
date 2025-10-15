@@ -26,6 +26,7 @@ public enum ErrorCode {
     FILE_NOT_FOUND(4001, "File not found", HttpStatus.NOT_FOUND),
     FILE_SIZE_EXCEEDED(4002, "File size exceeded the limit of {max} MB", HttpStatus.BAD_REQUEST),
     USER_ALREADY_VERIFIED(5001, "User account is already verified", HttpStatus.BAD_REQUEST),
+    RESET_PASSWORD_TOKEN_EXPIRED(5002, "Reset password token has expired", HttpStatus.BAD_REQUEST),
     INVALID_KEY(8888, "Invalid key provided", HttpStatus.BAD_REQUEST),
     UNCATEGORIZED_EXCEPTION(9999, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
     ;

@@ -58,9 +58,9 @@ public class User {
 
     Instant verifyOtpExpiry;
 
-    String resetPasswordOtp;
+    String resetPasswordToken;
 
-    Instant resetPasswordOtpExpiry;
+    Instant resetPasswordTokenExpiry;
 
     @ManyToMany
     Set<Role> roles;

@@ -17,8 +17,6 @@ import com.nimbusds.jose.crypto.MACVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
-import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,26 +32,23 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@FieldDefaults(level = lombok.AccessLevel.PRIVATE, makeFinal = true)
 public class AuthenticationServiceImpl implements AuthenticationService {
 
-    EmailService emailService;
-    PasswordEncoder passwordEncoder;
-    UserRepository userRepository;
-    InvalidatedTokenRepository invalidatedTokenRepository;
+    private final EmailService emailService;
+    private final PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
+    private final InvalidatedTokenRepository invalidatedTokenRepository;
 
-    @NonFinal
     @Value("${app.mail.verification-otp-expiry-duration}")
-    protected Long OTP_EXPIRY_DURATION; // in seconds
-    @NonFinal
-    @Value("${app.jwt.signerKey}")
-    protected String SECRET_KEY;
-    @NonFinal
+    private Long VERIFY_OTP_EXPIRY_DURATION;
+    @Value("${app.mail.reset-password-token-expiry-duration}")
+    private Long RESET_PASSWORD_TOKEN_EXPIRY_DURATION;
+    @Value("${app.jwt.secret-key}")
+    private String JWT_SECRET_KEY;
     @Value("${app.jwt.valid-duration}")
-    protected Long VALID_DURATION;
-    @NonFinal
+    private Long JWT_EXPIRY_DURATION;
     @Value("${app.jwt.refreshable-duration}")
-    protected Long REFRESHABLE_DURATION;
+    private Long REFRESHABLE_JWT_EXPIRY_DURATION;
 
     private String buildScope(User user) {
         StringJoiner stringJoiner = new StringJoiner(" ");
@@ -76,7 +71,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .subject(user.getEmail())
                 .issuer("kakadev.com")
                 .issueTime(new Date())
-                .expirationTime(new Date(Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS).toEpochMilli()))
+                .expirationTime(new Date(Instant.now().plus(JWT_EXPIRY_DURATION, ChronoUnit.SECONDS).toEpochMilli()))
                 .jwtID(UUID.randomUUID().toString())
                 .claim("scope", buildScope(user))
                 .build();
@@ -86,7 +81,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         JWSObject jwsObject = new JWSObject(header, payload);
 
         try {
-            jwsObject.sign(new MACSigner(SECRET_KEY.getBytes()));
+            jwsObject.sign(new MACSigner(JWT_SECRET_KEY.getBytes()));
             return jwsObject.serialize();
         } catch (JOSEException e) {
             log.error("Error generating token", e);
@@ -95,13 +90,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
     private SignedJWT verifyToken(String token, boolean isRefresh) throws JOSEException, ParseException {
-        JWSVerifier verifier = new MACVerifier(SECRET_KEY.getBytes());
+        JWSVerifier verifier = new MACVerifier(JWT_SECRET_KEY.getBytes());
 
         SignedJWT signedJWT = SignedJWT.parse(token);
 
         Date expirationTime = (isRefresh)
                 ? new Date(signedJWT.getJWTClaimsSet().getIssueTime().toInstant()
-                .plus(REFRESHABLE_DURATION, ChronoUnit.SECONDS).toEpochMilli())
+                .plus(REFRESHABLE_JWT_EXPIRY_DURATION, ChronoUnit.SECONDS).toEpochMilli())
                 : signedJWT.getJWTClaimsSet().getExpirationTime();
 
         var verified = signedJWT.verify(verifier);
@@ -134,11 +129,51 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         String verificationCode = generateVerificationCode();
         newUser.setVerifyOtp(verificationCode);
-        newUser.setVerifyOtpExpiry(Instant.now().plus(OTP_EXPIRY_DURATION, ChronoUnit.SECONDS));
+        newUser.setVerifyOtpExpiry(Instant.now().plus(VERIFY_OTP_EXPIRY_DURATION, ChronoUnit.SECONDS));
 
         userRepository.save(newUser);
 
         emailService.sendVerificationAccount(email, verificationCode);
+    }
+
+    @Override
+    public void forgotPassword(String email) {
+        User existingUser = userRepository.findByEmail(email)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        if (!existingUser.getIsAccountVerified()) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_VERIFIED);
+        }
+
+        String resetPasswordToken = UUID.randomUUID().toString();
+        existingUser.setResetPasswordToken(resetPasswordToken);
+        existingUser.setResetPasswordTokenExpiry(
+                Instant.now().plus(RESET_PASSWORD_TOKEN_EXPIRY_DURATION, ChronoUnit.SECONDS));
+
+        userRepository.save(existingUser);
+
+        emailService.sendResetPassword(email, resetPasswordToken);
+    }
+
+    @Override
+    public void resetPassword(ResetPasswordRequestDTO request) {
+        User existingUser = userRepository.findByResetPasswordToken(request.getResetPasswordToken())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        if (existingUser.getResetPasswordTokenExpiry() == null ||
+                existingUser.getResetPasswordTokenExpiry().isBefore(Instant.now())) {
+            throw new AppException(ErrorCode.RESET_PASSWORD_TOKEN_EXPIRED);
+        }
+
+        if (!request.getNewPassword().equals(request.getConfirmNewPassword())) {
+            throw new AppException(ErrorCode.PASSWORD_MISMATCH);
+        }
+
+        existingUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        existingUser.setResetPasswordToken(null);
+        existingUser.setResetPasswordTokenExpiry(null);
+
+        userRepository.save(existingUser);
     }
 
     @Override
@@ -203,6 +238,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     ) {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        if (!user.getIsAccountVerified()) {
+            throw new AppException(ErrorCode.ACCOUNT_NOT_VERIFIED);
+        }
 
         boolean isAuthenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
 

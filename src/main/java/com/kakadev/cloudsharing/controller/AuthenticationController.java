@@ -41,6 +41,24 @@ public class AuthenticationController {
                 .build();
     }
 
+    @PostMapping("/forgot-password")
+    ApiResponse<Void> forgotPassword(
+            @RequestBody ForgotPasswordRequestDTO request
+    ) {
+        authenticationService.forgotPassword(request.getEmail());
+        return ApiResponse.<Void>builder()
+                .build();
+    }
+
+    @PostMapping("/reset-password")
+    ApiResponse<Void> resetPassword(
+            @RequestBody ResetPasswordRequestDTO request
+    ) {
+        authenticationService.resetPassword(request);
+        return ApiResponse.<Void>builder()
+                .build();
+    }
+
     @PostMapping("/login")
     ApiResponse<AuthenticationResponseDTO> authenticate(
             @RequestBody AuthenticationRequestDTO request
@@ -77,5 +95,4 @@ public class AuthenticationController {
                 .result(authenticationService.refreshToken(request))
                 .build();
     }
-
 }
