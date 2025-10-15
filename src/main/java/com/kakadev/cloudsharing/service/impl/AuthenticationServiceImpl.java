@@ -138,7 +138,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         userRepository.save(newUser);
 
-        emailService.sendResetPassword(email, verificationCode);
+        emailService.sendVerificationAccount(email, verificationCode);
     }
 
     @Override
