@@ -12,6 +12,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -52,6 +53,7 @@ public class SecurityConfig {
                                 )
                                 .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                 )
+                .addFilterBefore(cookieTokenFilter(), BearerTokenAuthenticationFilter.class)
                 .logout(AbstractHttpConfigurer::disable)
         ;
 
@@ -81,5 +83,10 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", configuration);
 
         return new CorsFilter(source);
+    }
+
+    @Bean
+    public CookieTokenFilter cookieTokenFilter() {
+        return new CookieTokenFilter();
     }
 }

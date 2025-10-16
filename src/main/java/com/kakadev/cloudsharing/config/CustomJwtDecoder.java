@@ -2,7 +2,6 @@ package com.kakadev.cloudsharing.config;
 
 import com.kakadev.cloudsharing.dto.request.IntrospectRequestDTO;
 import com.kakadev.cloudsharing.service.AuthenticationService;
-
 import com.nimbusds.jose.JOSEException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,7 +13,6 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.spec.SecretKeySpec;
-
 import java.text.ParseException;
 import java.util.Objects;
 
@@ -42,14 +40,17 @@ public class CustomJwtDecoder implements JwtDecoder {
             throw new JwtException(e.getMessage());
         }
 
-        if(Objects.isNull(nimbusJwtDecoder)) {
+        return getNimbusJwtDecoder().decode(token);
+    }
+
+    private NimbusJwtDecoder getNimbusJwtDecoder() {
+        if (Objects.isNull(nimbusJwtDecoder)) {
             SecretKeySpec secretKeySpec = new SecretKeySpec(SECRET_KEY.getBytes(), "HS512");
             nimbusJwtDecoder = NimbusJwtDecoder
                     .withSecretKey(secretKeySpec)
                     .macAlgorithm(MacAlgorithm.HS512)
                     .build();
         }
-
-        return nimbusJwtDecoder.decode(token);
+        return nimbusJwtDecoder;
     }
 }

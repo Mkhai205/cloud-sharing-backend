@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.validator.constraints.URL;
 
 @Data
 @Builder
@@ -25,7 +24,4 @@ public class CreateUserRequestDTO {
 
     @NotBlank(message = "LAST_NAME_REQUIRED")
     String lastName;
-
-    @URL(message = "URL_INVALID")
-    String avatarUrl;
 }

@@ -15,18 +15,24 @@ spring:
   # JPA Configuration
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
         format_sql: true
     open-in-view: true
+  # SQL Initialization
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:data.sql
+      encoding: utf-8
   # Mail Configuration
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${MAIL_USERNAME}
-    password: ${MAIL_PASSWORD}
+    username: ${MAIL_USERNAME:dummy@example.com}
+    password: ${MAIL_PASSWORD:dummy_password}
     properties:
       mail:
         smtp:
@@ -37,12 +43,13 @@ app:
   # JWT Configuration
   jwt:
     secret-key: "mySecretKey123456789012345678901234567890123456789012345678901234567890"
-    valid-duration: 3600
-    refreshable-duration: 86400
+    valid-duration: 3600 # 1 hour
+    refreshable-duration: 86400 # 24 hours
+    cookie-max-age: 86400 # 24 hours
   #Mail Configuration
   mail:
-    verification-otp-expiry-duration: 300
-    reset-password-token-expiry-duration: 900
+    verification-otp-expiry-duration: 300 # 5 minutes
+    reset-password-token-expiry-duration: 900 # 15 minutes
   # Frontend Configuration
   frontend:
     url: ${FRONTEND_URL:http://localhost:3000}

@@ -1,6 +1,9 @@
 package com.kakadev.cloudsharing.service.impl;
 
-import com.kakadev.cloudsharing.dto.request.*;
+import com.kakadev.cloudsharing.dto.request.AuthenticationRequestDTO;
+import com.kakadev.cloudsharing.dto.request.IntrospectRequestDTO;
+import com.kakadev.cloudsharing.dto.request.ResetPasswordRequestDTO;
+import com.kakadev.cloudsharing.dto.request.VerifyAccountRequestDTO;
 import com.kakadev.cloudsharing.dto.response.AuthenticationResponseDTO;
 import com.kakadev.cloudsharing.dto.response.IntrospectResponseDTO;
 import com.kakadev.cloudsharing.exception.AppException;
@@ -89,7 +92,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         }
     }
 
-    private SignedJWT verifyToken(String token, boolean isRefresh) throws JOSEException, ParseException {
+    private SignedJWT verifyToken(
+            String token, boolean isRefresh
+    ) throws JOSEException, ParseException {
         JWSVerifier verifier = new MACVerifier(JWT_SECRET_KEY.getBytes());
 
         SignedJWT signedJWT = SignedJWT.parse(token);
@@ -101,11 +106,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         var verified = signedJWT.verify(verifier);
 
-        if (!verified || expirationTime.before(new Date())) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
-        }
-
-        if (invalidatedTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID())) {
+        if (!verified || expirationTime.before(new Date()) ||
+                invalidatedTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID())
+        ) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
 
@@ -206,28 +209,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public AuthenticationResponseDTO refreshToken(
-            RefreshTokenRequestDTO request
+            String token
     ) throws ParseException, JOSEException {
-        SignedJWT signedToken = verifyToken(request.getToken(), true);
+        SignedJWT signedToken = verifyToken(token, true);
 
-        String jit = signedToken.getJWTClaimsSet().getJWTID();
-        Date expirationTime = signedToken.getJWTClaimsSet().getExpirationTime();
-
-        InvalidatedToken invalidatedToken = InvalidatedToken.builder()
-                .id(jit)
-                .expirationTime(expirationTime)
-                .build();
-
-        invalidatedTokenRepository.save(invalidatedToken);
+        setInvalidatedToken(token);
 
         String email = signedToken.getJWTClaimsSet().getSubject();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        String token = generateToken(user);
+        String newToken = generateToken(user);
 
         return AuthenticationResponseDTO.builder()
-                .token(token)
+                .token(newToken)
                 .authenticated(true)
                 .build();
     }
@@ -259,23 +254,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public void logout(
-            LogoutRequestDTO request
-    ) throws ParseException, JOSEException {
-        try {
-            SignedJWT signToken = verifyToken(request.getToken(), true);
-
-            String jit = signToken.getJWTClaimsSet().getJWTID();
-            Date expirationTime = signToken.getJWTClaimsSet().getExpirationTime();
-
-            InvalidatedToken invalidatedToken = InvalidatedToken.builder()
-                    .id(jit)
-                    .expirationTime(expirationTime)
-                    .build();
-
-            invalidatedTokenRepository.save(invalidatedToken);
-        } catch (AppException e) {
-            log.info("Token already expired");
-        }
+            String token
+    ) {
+        setInvalidatedToken(token);
     }
 
     @Override
@@ -294,5 +275,22 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         return IntrospectResponseDTO.builder()
                 .valid(isValid)
                 .build();
+    }
+
+    private void setInvalidatedToken(String token) {
+        try {
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            String jti = signedJWT.getJWTClaimsSet().getJWTID();
+            Date expirationTime = signedJWT.getJWTClaimsSet().getExpirationTime();
+
+            InvalidatedToken invalidatedToken = InvalidatedToken.builder()
+                    .id(jti)
+                    .expirationTime(expirationTime)
+                    .build();
+
+            invalidatedTokenRepository.save(invalidatedToken);
+        } catch (ParseException e) {
+            log.error("Error parsing token for invalidation", e);
+        }
     }
 }
